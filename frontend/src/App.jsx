@@ -1,0 +1,50 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { ThemeProvider } from './context/ThemeContext';
+import ProtectedRoute from './components/ProtectedRoute';
+import MainLayout from './layouts/MainLayout';
+import Dashboard from './pages/Dashboard';
+import Stock from './pages/Stock';
+import Produit from './pages/Produit';
+import Suppliers from './pages/Suppliers';
+import Forecasts from './pages/Forecasts';
+import Login from './pages/Login';
+import Register from './pages/Register';
+
+// Page provisoire
+const Commandes = () => <div className="p-6"><h1 className="text-2xl font-bold">Commandes 🛒</h1></div>;
+
+function App() {
+  return (
+    <ThemeProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+
+          <Route path="/" element={
+            <ProtectedRoute><MainLayout><Dashboard /></MainLayout></ProtectedRoute>
+          } />
+          <Route path="/stock" element={
+            <ProtectedRoute><MainLayout><Stock /></MainLayout></ProtectedRoute>
+          } />
+          <Route path="/stocks" element={
+            <ProtectedRoute><MainLayout><Produit /></MainLayout></ProtectedRoute>
+          } />
+          <Route path="/fournisseurs" element={
+            <ProtectedRoute><MainLayout><Suppliers /></MainLayout></ProtectedRoute>
+          } />
+          <Route path="/previsions" element={
+            <ProtectedRoute><MainLayout><Forecasts /></MainLayout></ProtectedRoute>
+          } />
+          <Route path="/commandes" element={
+            <ProtectedRoute><MainLayout><Commandes /></MainLayout></ProtectedRoute>
+          } />
+
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </ThemeProvider>
+  );
+}
+
+export default App;
