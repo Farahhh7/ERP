@@ -1,43 +1,57 @@
-import Supplier from '../models/Supplier.js';
+const Supplier = require('../models/Supplier');
 
-export const getSuppliers = async (req, res) => {
+const getAllSuppliers = async (req, res) => {
   try {
     const suppliers = await Supplier.find().sort({ createdAt: -1 });
-    res.json(suppliers);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(200).json(suppliers);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
-export const createSupplier = async (req, res) => {
+const getSupplierById = async (req, res) => {
   try {
-    const { nom, telephone, delaiLivraison } = req.body;
-    if (!nom || !telephone || delaiLivraison === undefined) {
-      return res.status(400).json({ message: 'Champs obligatoires manquants' });
-    }
+    const supplier = await Supplier.findById(req.params.id);
+    if (!supplier) return res.status(404).json({ message: 'Fournisseur non trouvé' });
+    res.status(200).json(supplier);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const createSupplier = async (req, res) => {
+  try {
     const supplier = await Supplier.create(req.body);
     res.status(201).json(supplier);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
 };
 
-export const updateSupplier = async (req, res) => {
+const updateSupplier = async (req, res) => {
   try {
-    const supplier = await Supplier.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!supplier) return res.status(404).json({ message: 'Fournisseur introuvable' });
-    res.json(supplier);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    const supplier = await Supplier.findByIdAndUpdate(
+      req.params.id, req.body,
+      { new: true, runValidators: true }
+    );
+    if (!supplier) return res.status(404).json({ message: 'Fournisseur non trouvé' });
+    res.status(200).json(supplier);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
 };
 
-export const deleteSupplier = async (req, res) => {
+const deleteSupplier = async (req, res) => {
   try {
     const supplier = await Supplier.findByIdAndDelete(req.params.id);
-    if (!supplier) return res.status(404).json({ message: 'Fournisseur introuvable' });
-    res.json({ message: 'Fournisseur supprimé' });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    if (!supplier) return res.status(404).json({ message: 'Fournisseur non trouvé' });
+    res.status(200).json({ message: 'Fournisseur supprimé' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
+};
+
+module.exports = {
+  getAllSuppliers, getSupplierById,
+  createSupplier, updateSupplier, deleteSupplier
 };

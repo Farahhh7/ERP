@@ -1,12 +1,15 @@
-import express from 'express';
-import { getSuppliers, createSupplier, updateSupplier, deleteSupplier } from '../controllers/supplierController.js';
-import { protect } from '../middleware/authMiddleware.js'; // adapte le nom si différent
-
+const express = require('express');
 const router = express.Router();
+const {
+  getAllSuppliers, getSupplierById,
+  createSupplier, updateSupplier, deleteSupplier
+} = require('../controllers/supplierController');
+const { protect } = require('../middleware/authMiddleware');
 
-router.get('/', protect, getSuppliers);
+router.get('/', protect, getAllSuppliers);
+router.get('/:id', protect, getSupplierById);
 router.post('/', protect, createSupplier);
 router.put('/:id', protect, updateSupplier);
 router.delete('/:id', protect, deleteSupplier);
 
-export default router;
+module.exports = router;

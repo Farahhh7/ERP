@@ -49,34 +49,40 @@ function Modal({ dark, border, text, subText, form, setForm, onSave, onClose, ed
           <div>
             <label style={labelStyle}>SKU *</label>
             <input style={inputStyle} placeholder="PRD-001"
-              value={form.sku} onChange={e => setForm({ ...form, sku: e.target.value })} />
+              value={form.sku}
+              onChange={e => setForm({ ...form, sku: e.target.value })} />
           </div>
           <div>
             <label style={labelStyle}>Catégorie *</label>
             <input style={inputStyle} placeholder="Informatique"
-              value={form.categorie} onChange={e => setForm({ ...form, categorie: e.target.value })} />
+              value={form.categorie}
+              onChange={e => setForm({ ...form, categorie: e.target.value })} />
           </div>
         </div>
 
         <label style={labelStyle}>Nom du produit *</label>
         <input style={inputStyle} placeholder="Nom complet du produit"
-          value={form.nom} onChange={e => setForm({ ...form, nom: e.target.value })} />
+          value={form.nom}
+          onChange={e => setForm({ ...form, nom: e.target.value })} />
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0 12px' }}>
           <div>
             <label style={labelStyle}>Quantité *</label>
             <input style={inputStyle} type="number" placeholder="0"
-              value={form.quantite} onChange={e => setForm({ ...form, quantite: e.target.value })} />
+              value={form.quantite}
+              onChange={e => setForm({ ...form, quantite: e.target.value })} />
           </div>
           <div>
             <label style={labelStyle}>Seuil critique *</label>
             <input style={inputStyle} type="number" placeholder="10"
-              value={form.seuilCritique} onChange={e => setForm({ ...form, seuilCritique: e.target.value })} />
+              value={form.seuilCritique}
+              onChange={e => setForm({ ...form, seuilCritique: e.target.value })} />
           </div>
           <div>
             <label style={labelStyle}>Prix (TND) *</label>
             <input style={inputStyle} type="number" placeholder="0.00"
-              value={form.prix} onChange={e => setForm({ ...form, prix: e.target.value })} />
+              value={form.prix}
+              onChange={e => setForm({ ...form, prix: e.target.value })} />
           </div>
         </div>
 
@@ -100,7 +106,7 @@ function Modal({ dark, border, text, subText, form, setForm, onSave, onClose, ed
   );
 }
 
-function Stock() {
+function Products() {
   const { darkMode, accentColor } = useTheme();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -136,7 +142,9 @@ function Stock() {
       const res = await fetch(API, { headers });
       const data = await res.json();
       setProducts(Array.isArray(data) ? data : []);
-    } catch { showToast('Erreur chargement', 'error'); }
+    } catch {
+      showToast('Erreur chargement', 'error');
+    }
     setLoading(false);
   };
 
@@ -183,7 +191,9 @@ function Stock() {
         const d = await res.json();
         showToast(d.message || 'Erreur', 'error');
       }
-    } catch { showToast('Erreur serveur', 'error'); }
+    } catch {
+      showToast('Erreur serveur', 'error');
+    }
   };
 
   const handleDelete = async (id) => {
@@ -194,7 +204,9 @@ function Stock() {
         setDeleteConfirm(null);
         fetchProducts();
       }
-    } catch { showToast('Erreur suppression', 'error'); }
+    } catch {
+      showToast('Erreur suppression', 'error');
+    }
   };
 
   const filtered = products.filter(p =>
@@ -204,8 +216,10 @@ function Stock() {
   );
 
   const getStatusBadge = (p) => {
-    if (p.quantite <= 0) return { label: 'Rupture', bg: 'rgba(239,68,68,0.1)', color: '#ef4444', border: 'rgba(239,68,68,0.2)' };
-    if (p.quantite <= p.seuilCritique) return { label: 'Critique', bg: 'rgba(245,158,11,0.1)', color: '#f59e0b', border: 'rgba(245,158,11,0.2)' };
+    if (p.quantite <= 0)
+      return { label: 'Rupture', bg: 'rgba(239,68,68,0.1)', color: '#ef4444', border: 'rgba(239,68,68,0.2)' };
+    if (p.quantite <= p.seuilCritique)
+      return { label: 'Critique', bg: 'rgba(245,158,11,0.1)', color: '#f59e0b', border: 'rgba(245,158,11,0.2)' };
     return { label: 'OK', bg: 'rgba(16,185,129,0.1)', color: '#10b981', border: 'rgba(16,185,129,0.2)' };
   };
 
@@ -227,7 +241,10 @@ function Stock() {
       )}
 
       <style>{`
-        @keyframes slideIn { from { transform: translateX(100px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideIn {
+          from { transform: translateX(100px); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
         .row-hover:hover { background: ${dark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)'} !important; }
         .action-btn:hover { opacity: 0.8; transform: scale(1.05); }
       `}</style>
@@ -255,7 +272,7 @@ function Stock() {
         </div>
       </div>
 
-      {/* Recherche + stats rapides */}
+      {/* Recherche + stats */}
       <div style={{
         background: cardBg, borderRadius: '14px',
         border: `1px solid ${border}`, padding: '16px 20px',
@@ -263,15 +280,17 @@ function Stock() {
       }}>
         <input
           placeholder="🔍  Rechercher par nom, SKU ou catégorie..."
-          value={search} onChange={e => setSearch(e.target.value)}
+          value={search}
+          onChange={e => setSearch(e.target.value)}
           style={{
             flex: 1, padding: '9px 14px',
             background: dark ? '#111827' : '#f9fafb',
-            border: `1px solid ${border}`, borderRadius: '10px',
-            color: text, fontSize: '12px', outline: 'none'
+            border: `1px solid ${border}`,
+            borderRadius: '10px', color: text,
+            fontSize: '12px', outline: 'none'
           }}
         />
-        <div style={{ display: 'flex', gap: '20px', flexShrink: 0 }}>
+        <div style={{ display: 'flex', gap: '24px', flexShrink: 0 }}>
           {[
             { label: 'Total', val: products.length, color: accentColor },
             { label: 'Critiques', val: products.filter(p => p.quantite <= p.seuilCritique && p.quantite > 0).length, color: '#f59e0b' },
@@ -297,8 +316,9 @@ function Stock() {
           padding: '12px 20px',
           background: tableBg,
           borderBottom: `1px solid ${border}`,
-          fontSize: '11px', color: subText, fontWeight: 600,
-          textTransform: 'uppercase', letterSpacing: '0.5px'
+          fontSize: '11px', color: subText,
+          fontWeight: 600, textTransform: 'uppercase',
+          letterSpacing: '0.5px'
         }}>
           <span>Produit / SKU</span>
           <span>Catégorie</span>
@@ -336,7 +356,7 @@ function Stock() {
                   <div style={{ fontSize: '10px', color: subText, marginTop: '2px' }}>{p.sku}</div>
                 </div>
                 <div style={{
-                  fontSize: '12px', color: subText,
+                  fontSize: '11px', color: subText,
                   background: dark ? '#111827' : '#f3f4f6',
                   padding: '3px 10px', borderRadius: '20px',
                   display: 'inline-block', width: 'fit-content'
@@ -346,7 +366,9 @@ function Stock() {
                   color: p.quantite <= p.seuilCritique ? '#ef4444' : text
                 }}>{p.quantite}</div>
                 <div style={{ fontSize: '13px', color: subText }}>{p.seuilCritique}</div>
-                <div style={{ fontSize: '13px', fontWeight: 600, color: accentColor }}>{p.prix} TND</div>
+                <div style={{ fontSize: '13px', fontWeight: 600, color: accentColor }}>
+                  {p.prix} TND
+                </div>
                 <div>
                   <span style={{
                     fontSize: '11px', fontWeight: 600,
@@ -360,14 +382,16 @@ function Stock() {
                     style={{
                       width: '30px', height: '30px', borderRadius: '8px',
                       border: `1px solid ${border}`, background: cardBg,
-                      cursor: 'pointer', fontSize: '13px', transition: 'all 0.15s'
+                      cursor: 'pointer', fontSize: '13px',
+                      transition: 'all 0.15s'
                     }}>✏️</button>
                   <button className="action-btn" onClick={() => setDeleteConfirm(p._id)}
                     style={{
                       width: '30px', height: '30px', borderRadius: '8px',
                       border: '1px solid rgba(239,68,68,0.3)',
                       background: 'rgba(239,68,68,0.1)',
-                      cursor: 'pointer', fontSize: '13px', transition: 'all 0.15s'
+                      cursor: 'pointer', fontSize: '13px',
+                      transition: 'all 0.15s'
                     }}>🗑️</button>
                 </div>
               </div>
@@ -426,4 +450,4 @@ function Stock() {
   );
 }
 
-export default Stock;
+export default Products;

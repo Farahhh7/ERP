@@ -2,12 +2,12 @@ import { Link, useLocation } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 
 const menuItems = [
-  { path: '/', label: 'Dashboard', icon: '📊' },
-  { path: '/stock', label: 'Produits', icon: '📦' },
-  { path: '/stocks', label: 'Stocks', icon: '🏭' },
-  { path: '/fournisseurs', label: 'Fournisseurs', icon: '🚚' },
-  { path: '/previsions', label: 'Prévisions', icon: '📈' },
-  { path: '/commandes', label: 'Commandes', icon: '🛒' },
+  { path: '/',             label: 'Dashboard',   icon: '📊' },
+  { path: '/stocks',        label: 'Produits',    icon: '📦' },
+  { path: '/stock',       label: 'Stocks',      icon: '🏭' },
+  { path: '/fournisseurs', label: 'Fournisseurs',icon: '🚚' },
+  { path: '/previsions',   label: 'Prévisions',  icon: '📈' },
+  { path: '/commandes',    label: 'Commandes',   icon: '🛒' },
 ];
 
 function Sidebar() {

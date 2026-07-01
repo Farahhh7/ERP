@@ -4,8 +4,9 @@ import { useTheme } from '../context/ThemeContext';
 const API = 'http://localhost:5000/api/suppliers';
 
 const emptyForm = {
-  nom: '', contact: '', telephone: '', email: '',
-  adresse: '', delaiLivraison: '', conditions: ''
+  nom: '', email: '', telephone: '',
+  adresse: '', delaiLivraison: 7,
+  conditionsContractuelles: ''
 };
 
 function Modal({ dark, border, text, subText, form, setForm, onSave, onClose, editMode, accentColor }) {
@@ -32,7 +33,7 @@ function Modal({ dark, border, text, subText, form, setForm, onSave, onClose, ed
       <div style={{
         background: dark ? '#1f2937' : '#fff',
         borderRadius: '18px', padding: '28px',
-        width: '420px', border: `1px solid ${border}`,
+        width: '440px', border: `1px solid ${border}`,
         boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
         maxHeight: '90vh', overflowY: 'auto'
       }}>
@@ -41,50 +42,57 @@ function Modal({ dark, border, text, subText, form, setForm, onSave, onClose, ed
             {editMode ? '✏️ Modifier fournisseur' : '➕ Nouveau fournisseur'}
           </h2>
           <button onClick={onClose} style={{
-            background: 'none', border: 'none', color: subText,
-            fontSize: '20px', cursor: 'pointer'
+            background: 'none', border: 'none',
+            color: subText, fontSize: '20px', cursor: 'pointer'
           }}>✕</button>
         </div>
 
-        <label style={labelStyle}>Nom du fournisseur *</label>
-        <input style={inputStyle} placeholder="Ex: SOTUPHARM Distribution"
-          value={form.nom} onChange={e => setForm({ ...form, nom: e.target.value })} />
-
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 12px' }}>
           <div>
-            <label style={labelStyle}>Personne à contacter</label>
-            <input style={inputStyle} placeholder="Nom du contact"
-              value={form.contact} onChange={e => setForm({ ...form, contact: e.target.value })} />
+            <label style={labelStyle}>Nom *</label>
+            <input style={inputStyle} placeholder="TechDistrib SARL"
+              value={form.nom}
+              onChange={e => setForm({ ...form, nom: e.target.value })} />
           </div>
           <div>
-            <label style={labelStyle}>Téléphone *</label>
-            <input style={inputStyle} placeholder="+216 XX XXX XXX"
-              value={form.telephone} onChange={e => setForm({ ...form, telephone: e.target.value })} />
+            <label style={labelStyle}>Email *</label>
+            <input style={inputStyle} type="email" placeholder="contact@fournisseur.tn"
+              value={form.email}
+              onChange={e => setForm({ ...form, email: e.target.value })} />
           </div>
         </div>
 
-        <label style={labelStyle}>Email</label>
-        <input style={inputStyle} type="email" placeholder="contact@fournisseur.tn"
-          value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 12px' }}>
+          <div>
+            <label style={labelStyle}>Téléphone</label>
+            <input style={inputStyle} placeholder="+216 XX XXX XXX"
+              value={form.telephone}
+              onChange={e => setForm({ ...form, telephone: e.target.value })} />
+          </div>
+          <div>
+            <label style={labelStyle}>Délai livraison (jours)</label>
+            <input style={inputStyle} type="number" min="1" placeholder="7"
+              value={form.delaiLivraison}
+              onChange={e => setForm({ ...form, delaiLivraison: Number(e.target.value) })} />
+          </div>
+        </div>
 
         <label style={labelStyle}>Adresse</label>
-        <input style={inputStyle} placeholder="Adresse complète"
-          value={form.adresse} onChange={e => setForm({ ...form, adresse: e.target.value })} />
+        <input style={inputStyle} placeholder="Rue, Ville, Pays"
+          value={form.adresse}
+          onChange={e => setForm({ ...form, adresse: e.target.value })} />
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 12px' }}>
-          <div>
-            <label style={labelStyle}>Délai de livraison (jours) *</label>
-            <input style={inputStyle} type="number" placeholder="7"
-              value={form.delaiLivraison} onChange={e => setForm({ ...form, delaiLivraison: e.target.value })} />
-          </div>
-          <div>
-            <label style={labelStyle}>Conditions contractuelles</label>
-            <input style={inputStyle} placeholder="Paiement 30j"
-              value={form.conditions} onChange={e => setForm({ ...form, conditions: e.target.value })} />
-          </div>
-        </div>
+        <label style={labelStyle}>Conditions contractuelles</label>
+        <textarea style={{
+          ...inputStyle, resize: 'vertical',
+          minHeight: '70px', fontFamily: 'inherit'
+        }}
+          placeholder="Conditions de paiement, remises, garanties..."
+          value={form.conditionsContractuelles}
+          onChange={e => setForm({ ...form, conditionsContractuelles: e.target.value })}
+        />
 
-        <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+        <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
           <button onClick={onClose} style={{
             flex: 1, padding: '10px', borderRadius: '10px',
             border: `1px solid ${border}`, background: 'none',
@@ -115,6 +123,7 @@ function Suppliers() {
   const [form, setForm] = useState(emptyForm);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [toast, setToast] = useState(null);
+  const [expanded, setExpanded] = useState(null);
 
   const token = localStorage.getItem('token');
   const headers = {
@@ -140,7 +149,9 @@ function Suppliers() {
       const res = await fetch(API, { headers });
       const data = await res.json();
       setSuppliers(Array.isArray(data) ? data : []);
-    } catch { showToast('Erreur chargement', 'error'); }
+    } catch {
+      showToast('Erreur chargement', 'error');
+    }
     setLoading(false);
   };
 
@@ -154,9 +165,11 @@ function Suppliers() {
 
   const openEdit = (s) => {
     setForm({
-      nom: s.nom, contact: s.contact || '', telephone: s.telephone,
-      email: s.email || '', adresse: s.adresse || '',
-      delaiLivraison: s.delaiLivraison, conditions: s.conditions || ''
+      nom: s.nom, email: s.email,
+      telephone: s.telephone || '',
+      adresse: s.adresse || '',
+      delaiLivraison: s.delaiLivraison || 7,
+      conditionsContractuelles: s.conditionsContractuelles || ''
     });
     setEditId(s._id);
     setEditMode(true);
@@ -164,8 +177,8 @@ function Suppliers() {
   };
 
   const handleSave = async () => {
-    if (!form.nom || !form.telephone || !form.delaiLivraison) {
-      showToast('Remplir tous les champs obligatoires', 'error');
+    if (!form.nom || !form.email) {
+      showToast('Nom et email obligatoires', 'error');
       return;
     }
     try {
@@ -173,10 +186,7 @@ function Suppliers() {
       const url = editMode ? `${API}/${editId}` : API;
       const res = await fetch(url, {
         method, headers,
-        body: JSON.stringify({
-          ...form,
-          delaiLivraison: Number(form.delaiLivraison)
-        })
+        body: JSON.stringify(form)
       });
       if (res.ok) {
         showToast(editMode ? 'Fournisseur modifié ✅' : 'Fournisseur ajouté ✅');
@@ -186,7 +196,9 @@ function Suppliers() {
         const d = await res.json();
         showToast(d.message || 'Erreur', 'error');
       }
-    } catch { showToast('Erreur serveur', 'error'); }
+    } catch {
+      showToast('Erreur serveur', 'error');
+    }
   };
 
   const handleDelete = async (id) => {
@@ -197,24 +209,26 @@ function Suppliers() {
         setDeleteConfirm(null);
         fetchSuppliers();
       }
-    } catch { showToast('Erreur suppression', 'error'); }
+    } catch {
+      showToast('Erreur suppression', 'error');
+    }
   };
 
   const filtered = suppliers.filter(s =>
     s.nom?.toLowerCase().includes(search.toLowerCase()) ||
-    s.contact?.toLowerCase().includes(search.toLowerCase()) ||
-    s.telephone?.toLowerCase().includes(search.toLowerCase())
+    s.email?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const getDelaiBadge = (delai) => {
-    if (delai <= 3) return { label: 'Rapide', bg: 'rgba(16,185,129,0.1)', color: '#10b981', border: 'rgba(16,185,129,0.2)' };
-    if (delai <= 10) return { label: 'Standard', bg: 'rgba(59,130,246,0.1)', color: '#3b82f6', border: 'rgba(59,130,246,0.2)' };
-    return { label: 'Lent', bg: 'rgba(245,158,11,0.1)', color: '#f59e0b', border: 'rgba(245,158,11,0.2)' };
+  const getDelaiColor = (d) => {
+    if (d <= 5) return '#10b981';
+    if (d <= 10) return '#f59e0b';
+    return '#ef4444';
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
+      {/* Toast */}
       {toast && (
         <div style={{
           position: 'fixed', top: '20px', right: '20px', zIndex: 200,
@@ -223,14 +237,17 @@ function Suppliers() {
           fontSize: '13px', fontWeight: 600,
           boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
           animation: 'slideIn 0.3s ease'
-        }}>
-          {toast.msg}
-        </div>
+        }}>{toast.msg}</div>
       )}
 
       <style>{`
-        @keyframes slideIn { from { transform: translateX(100px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        .row-hover:hover { background: ${dark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)'} !important; }
+        @keyframes slideIn {
+          from { transform: translateX(100px); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+        .row-hover:hover {
+          background: ${dark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)'} !important;
+        }
         .action-btn:hover { opacity: 0.8; transform: scale(1.05); }
       `}</style>
 
@@ -257,33 +274,35 @@ function Suppliers() {
         </div>
       </div>
 
-      {/* Recherche + stats rapides */}
+      {/* Stats + Recherche */}
       <div style={{
         background: cardBg, borderRadius: '14px',
         border: `1px solid ${border}`, padding: '16px 20px',
         display: 'flex', alignItems: 'center', gap: '16px'
       }}>
         <input
-          placeholder="🔍  Rechercher par nom, contact ou téléphone..."
-          value={search} onChange={e => setSearch(e.target.value)}
+          placeholder="🔍  Rechercher par nom ou email..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
           style={{
             flex: 1, padding: '9px 14px',
             background: dark ? '#111827' : '#f9fafb',
-            border: `1px solid ${border}`, borderRadius: '10px',
-            color: text, fontSize: '12px', outline: 'none'
+            border: `1px solid ${border}`,
+            borderRadius: '10px', color: text,
+            fontSize: '12px', outline: 'none'
           }}
         />
-        <div style={{ display: 'flex', gap: '20px', flexShrink: 0 }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '18px', fontWeight: 700, color: accentColor }}>{suppliers.length}</div>
-            <div style={{ fontSize: '10px', color: subText }}>Total</div>
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '18px', fontWeight: 700, color: '#10b981' }}>
-              {suppliers.filter(s => s.delaiLivraison <= 3).length}
+        <div style={{ display: 'flex', gap: '24px', flexShrink: 0 }}>
+          {[
+            { label: 'Total', val: suppliers.length, color: accentColor },
+            { label: 'Délai ≤ 5j', val: suppliers.filter(s => s.delaiLivraison <= 5).length, color: '#10b981' },
+            { label: 'Délai > 10j', val: suppliers.filter(s => s.delaiLivraison > 10).length, color: '#ef4444' },
+          ].map((s, i) => (
+            <div key={i} style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: s.color }}>{s.val}</div>
+              <div style={{ fontSize: '10px', color: subText }}>{s.label}</div>
             </div>
-            <div style={{ fontSize: '10px', color: subText }}>Livraison rapide</div>
-          </div>
+          ))}
         </div>
       </div>
 
@@ -292,83 +311,142 @@ function Suppliers() {
         background: cardBg, borderRadius: '14px',
         border: `1px solid ${border}`, overflow: 'hidden'
       }}>
+        {/* Header */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: '1.4fr 1fr 1.2fr 1fr 1fr 100px',
+          gridTemplateColumns: '2fr 1.5fr 1fr 1fr 1fr 100px',
           padding: '12px 20px',
           background: tableBg,
           borderBottom: `1px solid ${border}`,
-          fontSize: '11px', color: subText, fontWeight: 600,
-          textTransform: 'uppercase', letterSpacing: '0.5px'
+          fontSize: '11px', color: subText,
+          fontWeight: 600, textTransform: 'uppercase',
+          letterSpacing: '0.5px'
         }}>
-          <span>Fournisseur / Contact</span>
-          <span>Téléphone</span>
+          <span>Nom</span>
           <span>Email</span>
-          <span>Délai livraison</span>
-          <span>Conditions</span>
+          <span>Téléphone</span>
+          <span>Délai (j)</span>
+          <span>Détails</span>
           <span style={{ textAlign: 'center' }}>Actions</span>
         </div>
 
+        {/* Rows */}
         {loading ? (
           <div style={{ padding: '40px', textAlign: 'center', color: subText, fontSize: '13px' }}>
             Chargement...
           </div>
         ) : filtered.length === 0 ? (
           <div style={{ padding: '40px', textAlign: 'center', color: subText, fontSize: '13px' }}>
-            {search ? 'Aucun résultat trouvé' : 'Aucun fournisseur — ajoutez le premier !'}
+            {search ? 'Aucun résultat' : 'Aucun fournisseur — ajoutez le premier !'}
           </div>
         ) : (
-          filtered.map((s, i) => {
-            const badge = getDelaiBadge(s.delaiLivraison);
-            return (
-              <div key={s._id} className="row-hover"
+          filtered.map((s, i) => (
+            <div key={s._id}>
+              <div className="row-hover"
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '1.4fr 1fr 1.2fr 1fr 1fr 100px',
+                  gridTemplateColumns: '2fr 1.5fr 1fr 1fr 1fr 100px',
                   padding: '13px 20px',
-                  borderBottom: i < filtered.length - 1 ? `1px solid ${border}` : 'none',
+                  borderBottom: `1px solid ${border}`,
                   alignItems: 'center',
                   transition: 'background 0.15s'
                 }}>
                 <div>
                   <div style={{ fontSize: '13px', fontWeight: 600, color: text }}>{s.nom}</div>
-                  {s.contact && (
-                    <div style={{ fontSize: '10px', color: subText, marginTop: '2px' }}>{s.contact}</div>
+                  {s.adresse && (
+                    <div style={{ fontSize: '10px', color: subText, marginTop: '2px' }}>
+                      📍 {s.adresse}
+                    </div>
                   )}
                 </div>
-                <div style={{ fontSize: '12px', color: subText }}>{s.telephone}</div>
-                <div style={{ fontSize: '12px', color: subText, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {s.email || '—'}
+
+                <div style={{ fontSize: '12px', color: subText }}>{s.email}</div>
+
+                <div style={{ fontSize: '12px', color: subText }}>
+                  {s.telephone || '—'}
                 </div>
+
                 <div>
                   <span style={{
-                    fontSize: '11px', fontWeight: 600,
-                    padding: '4px 10px', borderRadius: '20px',
-                    background: badge.bg, color: badge.color,
-                    border: `1px solid ${badge.border}`
-                  }}>{s.delaiLivraison}j — {badge.label}</span>
+                    fontSize: '13px', fontWeight: 700,
+                    color: getDelaiColor(s.delaiLivraison),
+                    background: `${getDelaiColor(s.delaiLivraison)}18`,
+                    padding: '3px 10px', borderRadius: '20px',
+                    border: `1px solid ${getDelaiColor(s.delaiLivraison)}33`
+                  }}>
+                    {s.delaiLivraison}j
+                  </span>
                 </div>
-                <div style={{ fontSize: '12px', color: subText, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {s.conditions || '—'}
-                </div>
+
+                <button
+                  onClick={() => setExpanded(expanded === s._id ? null : s._id)}
+                  style={{
+                    background: 'none', border: `1px solid ${border}`,
+                    borderRadius: '8px', padding: '4px 10px',
+                    color: subText, fontSize: '11px',
+                    cursor: 'pointer', transition: 'all 0.2s'
+                  }}>
+                  {expanded === s._id ? '▲ Moins' : '▼ Plus'}
+                </button>
+
                 <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
                   <button className="action-btn" onClick={() => openEdit(s)}
                     style={{
                       width: '30px', height: '30px', borderRadius: '8px',
                       border: `1px solid ${border}`, background: cardBg,
-                      cursor: 'pointer', fontSize: '13px', transition: 'all 0.15s'
+                      cursor: 'pointer', fontSize: '13px',
+                      transition: 'all 0.15s'
                     }}>✏️</button>
                   <button className="action-btn" onClick={() => setDeleteConfirm(s._id)}
                     style={{
                       width: '30px', height: '30px', borderRadius: '8px',
                       border: '1px solid rgba(239,68,68,0.3)',
                       background: 'rgba(239,68,68,0.1)',
-                      cursor: 'pointer', fontSize: '13px', transition: 'all 0.15s'
+                      cursor: 'pointer', fontSize: '13px',
+                      transition: 'all 0.15s'
                     }}>🗑️</button>
                 </div>
               </div>
-            );
-          })
+
+              {/* Expanded details */}
+              {expanded === s._id && (
+                <div style={{
+                  padding: '14px 20px',
+                  background: dark ? '#111827' : '#f9fafb',
+                  borderBottom: `1px solid ${border}`,
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '10px'
+                }}>
+                  <div style={{
+                    padding: '12px', borderRadius: '10px',
+                    background: cardBg, border: `1px solid ${border}`
+                  }}>
+                    <div style={{ fontSize: '10px', color: subText, marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Conditions contractuelles
+                    </div>
+                    <div style={{ fontSize: '12px', color: text }}>
+                      {s.conditionsContractuelles || 'Aucune condition renseignée'}
+                    </div>
+                  </div>
+                  <div style={{
+                    padding: '12px', borderRadius: '10px',
+                    background: cardBg, border: `1px solid ${border}`
+                  }}>
+                    <div style={{ fontSize: '10px', color: subText, marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Délai de livraison
+                    </div>
+                    <div style={{ fontSize: '20px', fontWeight: 700, color: getDelaiColor(s.delaiLivraison) }}>
+                      {s.delaiLivraison} jours
+                    </div>
+                    <div style={{ fontSize: '10px', color: subText, marginTop: '2px' }}>
+                      {s.delaiLivraison <= 5 ? '✅ Rapide' : s.delaiLivraison <= 10 ? '⚠️ Moyen' : '🔴 Long'}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))
         )}
       </div>
 
