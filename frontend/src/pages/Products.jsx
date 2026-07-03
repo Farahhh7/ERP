@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTheme } from '../context/ThemeContext';
-
-const API = 'http://localhost:5000/api/products';
+import { useProducts } from '../hooks/useProducts';
 
 const emptyForm = {
   sku: '', nom: '', categorie: '',
@@ -108,8 +107,14 @@ function Modal({ dark, border, text, subText, form, setForm, onSave, onClose, ed
 
 function Products() {
   const { darkMode, accentColor } = useTheme();
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+
+  // ✅ Hook remplace tout le fetch logic
+  const {
+    products, loading,
+    fetchProducts, createProduct,
+    updateProduct, deleteProduct
+  } = useProducts();
+
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -117,12 +122,6 @@ function Products() {
   const [form, setForm] = useState(emptyForm);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [toast, setToast] = useState(null);
-
-  const token = localStorage.getItem('token');
-  const headers = {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${token}`
-  };
 
   const dark = darkMode;
   const text = dark ? '#f9fafb' : '#111827';
@@ -135,20 +134,6 @@ function Products() {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
   };
-
-  const fetchProducts = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(API, { headers });
-      const data = await res.json();
-      setProducts(Array.isArray(data) ? data : []);
-    } catch {
-      showToast('Erreur chargement', 'error');
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => { fetchProducts(); }, []);
 
   const openAdd = () => {
     setForm(emptyForm);
@@ -166,46 +151,40 @@ function Products() {
     setShowModal(true);
   };
 
+  // ✅ handleSave yesta3mel hook direct
   const handleSave = async () => {
     if (!form.sku || !form.nom || !form.categorie || !form.prix) {
       showToast('Remplir tous les champs obligatoires', 'error');
       return;
     }
     try {
-      const method = editMode ? 'PUT' : 'POST';
-      const url = editMode ? `${API}/${editId}` : API;
-      const res = await fetch(url, {
-        method, headers,
-        body: JSON.stringify({
-          ...form,
-          quantite: Number(form.quantite),
-          seuilCritique: Number(form.seuilCritique),
-          prix: Number(form.prix)
-        })
-      });
-      if (res.ok) {
-        showToast(editMode ? 'Produit modifié ✅' : 'Produit ajouté ✅');
-        setShowModal(false);
-        fetchProducts();
+      const payload = {
+        ...form,
+        quantite: Number(form.quantite),
+        seuilCritique: Number(form.seuilCritique),
+        prix: Number(form.prix)
+      };
+      if (editMode) {
+        await updateProduct(editId, payload);
+        showToast('Produit modifié ✅');
       } else {
-        const d = await res.json();
-        showToast(d.message || 'Erreur', 'error');
+        await createProduct(payload);
+        showToast('Produit ajouté ✅');
       }
-    } catch {
-      showToast('Erreur serveur', 'error');
+      setShowModal(false);
+    } catch (err) {
+      showToast(err.message || 'Erreur serveur', 'error');
     }
   };
 
+  // ✅ handleDelete yesta3mel hook direct
   const handleDelete = async (id) => {
     try {
-      const res = await fetch(`${API}/${id}`, { method: 'DELETE', headers });
-      if (res.ok) {
-        showToast('Produit supprimé');
-        setDeleteConfirm(null);
-        fetchProducts();
-      }
-    } catch {
-      showToast('Erreur suppression', 'error');
+      await deleteProduct(id);
+      showToast('Produit supprimé');
+      setDeleteConfirm(null);
+    } catch (err) {
+      showToast(err.message || 'Erreur suppression', 'error');
     }
   };
 
@@ -309,7 +288,6 @@ function Products() {
         background: cardBg, borderRadius: '14px',
         border: `1px solid ${border}`, overflow: 'hidden'
       }}>
-        {/* Header tableau */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: '1.5fr 1fr 1fr 1fr 1fr 1fr 100px',
@@ -329,7 +307,6 @@ function Products() {
           <span style={{ textAlign: 'center' }}>Actions</span>
         </div>
 
-        {/* Rows */}
         {loading ? (
           <div style={{ padding: '40px', textAlign: 'center', color: subText, fontSize: '13px' }}>
             Chargement...

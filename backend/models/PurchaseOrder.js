@@ -1,12 +1,16 @@
 const mongoose = require('mongoose');
 
 const purchaseOrderSchema = new mongoose.Schema({
-  supplier: { type: mongoose.Schema.Types.ObjectId, ref: 'Supplier', required: true },
+  supplier: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Supplier',
+    required: true
+  },
   lignesCommande: [
     {
       product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
-      quantite: Number,
-      prixUnitaire: Number,
+      quantite: { type: Number, default: 1 },
+      prixUnitaire: { type: Number, default: 0 },
     },
   ],
   statut: {

@@ -7,11 +7,9 @@ import Stock from './pages/Stocks';
 import Produit from './pages/Products';
 import Suppliers from './pages/Suppliers';
 import Forecasts from './pages/Forecasts';
+import Commandes from './pages/Commandes';
 import Login from './pages/Login';
 import Register from './pages/Register';
-
-// Page provisoire
-const Commandes = () => <div className="p-6"><h1 className="text-2xl font-bold">Commandes 🛒</h1></div>;
 
 function App() {
   return (

@@ -47,25 +47,39 @@ function Dashboard() {
   }, []);
 
   const fetchData = async () => {
-    setLoading(true);
-    try {
-      const headers = { Authorization: `Bearer ${token}` };
+  setLoading(true);
+  try {
+    const headers = { Authorization: `Bearer ${token}` };
 
-      const prodRes = await fetch('http://localhost:5000/api/products', { headers });
-      const products = await prodRes.json();
+    const [prodRes, orderRes, supplierRes] = await Promise.all([
+      fetch('http://localhost:5000/api/products', { headers }),
+      fetch('http://localhost:5000/api/orders', { headers }),
+      fetch('http://localhost:5000/api/suppliers', { headers }),
+    ]);
 
-      const ruptures = products.filter(p => p.quantite <= p.seuilCritique);
-      setAlertes(ruptures.slice(0, 5));
-      setStats(prev => ({
-        ...prev,
-        total: products.length,
-        ruptures: ruptures.length,
-      }));
-    } catch (err) {
-      console.error(err);
-    }
-    setLoading(false);
-  };
+    const products = await prodRes.json();
+    const orders = await orderRes.json();
+    const suppliers = await supplierRes.json();
+
+    const ruptures = Array.isArray(products)
+      ? products.filter(p => p.quantite <= p.seuilCritique)
+      : [];
+    const commandesEnAttente = Array.isArray(orders)
+      ? orders.filter(o => o.statut === 'en_attente')
+      : [];
+
+    setAlertes(ruptures.slice(0, 5));
+    setStats({
+      total: Array.isArray(products) ? products.length : 0,
+      ruptures: ruptures.length,
+      commandes: commandesEnAttente.length,
+      fournisseurs: Array.isArray(suppliers) ? suppliers.length : 0,
+    });
+  } catch (err) {
+    console.error(err);
+  }
+  setLoading(false);
+};
 
   const text = darkMode ? '#f9fafb' : '#111827';
   const subText = darkMode ? '#9ca3af' : '#6b7280';

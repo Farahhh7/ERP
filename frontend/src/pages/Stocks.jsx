@@ -1,26 +1,26 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTheme } from '../context/ThemeContext';
-
-const API_MOVEMENTS = 'http://localhost:5000/api/stock-movements';
-const API_PRODUCTS = 'http://localhost:5000/api/products';
+import { useStockMovements } from '../hooks/useStockMovements';
+import { useProducts } from '../hooks/useProducts';
 
 function Stocks() {
   const { darkMode, accentColor } = useTheme();
-  const [movements, setMovements] = useState([]);
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+
+  // ✅ Hooks remplacent tout le fetch logic
+  const {
+    movements, loading,
+    totalEntrees, totalSorties,
+    fetchMovements, createMovement, deleteMovement
+  } = useStockMovements();
+
+  const { products, fetchProducts } = useProducts();
+
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState('entree');
   const [form, setForm] = useState({ product: '', quantite: '', referenceDocument: '' });
   const [toast, setToast] = useState(null);
   const [filter, setFilter] = useState('all');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
-
-  const token = localStorage.getItem('token');
-  const headers = {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${token}`
-  };
 
   const dark = darkMode;
   const text = dark ? '#f9fafb' : '#111827';
@@ -34,92 +34,46 @@ function Stocks() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const fetchMovements = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(API_MOVEMENTS, { headers });
-      const data = await res.json();
-      setMovements(Array.isArray(data) ? data : []);
-    } catch {
-      showToast('Erreur chargement', 'error');
-    }
-    setLoading(false);
-  };
-
-  const fetchProducts = async () => {
-    try {
-      const res = await fetch(API_PRODUCTS, { headers });
-      const data = await res.json();
-      setProducts(Array.isArray(data) ? data : []);
-    } catch {}
-  };
-
-  useEffect(() => {
-    fetchMovements();
-    fetchProducts();
-  }, []);
-
   const openModal = (type) => {
     setModalType(type);
     setForm({ product: '', quantite: '', referenceDocument: '' });
     setShowModal(true);
   };
 
+  // ✅ handleSubmit yesta3mel hook direct
   const handleSubmit = async () => {
     if (!form.product || !form.quantite) {
       showToast('Produit et quantité obligatoires', 'error');
       return;
     }
     try {
-      const res = await fetch(API_MOVEMENTS, {
-        method: 'POST', headers,
-        body: JSON.stringify({
-          ...form,
-          type: modalType,
-          quantite: Number(form.quantite)
-        })
+      await createMovement({
+        ...form,
+        type: modalType,
+        quantite: Number(form.quantite)
       });
-      const data = await res.json();
-      if (res.ok) {
-        showToast(modalType === 'entree' ? 'Entrée enregistrée ✅' : 'Sortie enregistrée ✅');
-        setShowModal(false);
-        fetchMovements();
-        fetchProducts();
-      } else {
-        showToast(data.message || 'Erreur', 'error');
-      }
-    } catch {
-      showToast('Erreur serveur', 'error');
+      showToast(modalType === 'entree' ? 'Entrée enregistrée ✅' : 'Sortie enregistrée ✅');
+      setShowModal(false);
+      fetchProducts();
+    } catch (err) {
+      showToast(err.message || 'Erreur', 'error');
     }
   };
 
+  // ✅ handleDelete yesta3mel hook direct
   const handleDelete = async (id) => {
     try {
-      const res = await fetch(`${API_MOVEMENTS}/${id}`, {
-        method: 'DELETE', headers
-      });
-      if (res.ok) {
-        showToast('Mouvement supprimé');
-        setDeleteConfirm(null);
-        fetchMovements();
-      } else {
-        showToast('Erreur suppression', 'error');
-      }
-    } catch {
-      showToast('Erreur serveur', 'error');
+      await deleteMovement(id);
+      showToast('Mouvement supprimé');
+      setDeleteConfirm(null);
+    } catch (err) {
+      showToast(err.message || 'Erreur suppression', 'error');
     }
   };
 
   const filtered = filter === 'all'
     ? movements
     : movements.filter(m => m.type === filter);
-
-  const totalEntrees = movements
-    .filter(m => m.type === 'entree')
-    .reduce((s, m) => s + m.quantite, 0);
-  const totalSorties = movements
-    .filter(m => m.type === 'sortie')
-    .reduce((s, m) => s + m.quantite, 0);
 
   const inputStyle = {
     width: '100%', padding: '9px 12px',
@@ -244,7 +198,6 @@ function Stocks() {
         background: cardBg, borderRadius: '14px',
         border: `1px solid ${border}`, overflow: 'hidden'
       }}>
-        {/* Header tableau */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 60px',
@@ -263,7 +216,6 @@ function Stocks() {
           <span style={{ textAlign: 'center' }}>Action</span>
         </div>
 
-        {/* Rows */}
         {loading ? (
           <div style={{ padding: '40px', textAlign: 'center', color: subText, fontSize: '13px' }}>
             Chargement...
@@ -325,10 +277,8 @@ function Stocks() {
                 })}
               </div>
 
-              {/* Delete button */}
               <div style={{ display: 'flex', justifyContent: 'center' }}>
-                <button
-                  className="action-btn"
+                <button className="action-btn"
                   onClick={() => setDeleteConfirm(m._id)}
                   style={{
                     width: '30px', height: '30px', borderRadius: '8px',
@@ -442,10 +392,7 @@ function Stocks() {
             border: `1px solid ${border}`, textAlign: 'center'
           }}>
             <div style={{ fontSize: '36px', marginBottom: '12px' }}>🗑️</div>
-            <div style={{
-              fontSize: '15px', fontWeight: 700,
-              color: text, marginBottom: '8px'
-            }}>
+            <div style={{ fontSize: '15px', fontWeight: 700, color: text, marginBottom: '8px' }}>
               Supprimer ce mouvement ?
             </div>
             <div style={{ fontSize: '12px', color: subText, marginBottom: '20px' }}>
@@ -467,7 +414,6 @@ function Stocks() {
           </div>
         </div>
       )}
-
     </div>
   );
 }
