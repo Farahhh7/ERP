@@ -12,6 +12,7 @@ function Login() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -128,16 +129,33 @@ function Login() {
       const res = await fetch('http://localhost:5000/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, rememberMe }),
       });
       const data = await res.json();
+
       if (!res.ok) {
         setError(data.message || 'Erreur de connexion');
-      } else {
+        setLoading(false);
+        return;
+      }
+
+      if (!data.token) {
+        setError("Le serveur n'a pas renvoyé de token d'authentification");
+        setLoading(false);
+        return;
+      }
+
+      // rememberMe → localStorage (persist 30j)
+      // mech rememberMe → sessionStorage (yemchi ki tsaker browser)
+      if (rememberMe) {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data));
-        navigate('/');
+      } else {
+        sessionStorage.setItem('token', data.token);
+        sessionStorage.setItem('user', JSON.stringify(data));
       }
+
+      navigate('/');
     } catch {
       setError('Impossible de contacter le serveur');
     }
@@ -178,16 +196,14 @@ function Login() {
         @keyframes rip { to { transform: scale(5); opacity: 0; } }
         @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
         @keyframes pulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.08); opacity: 0.5; } }
-        @keyframes spin { to { --conic-angle: 360deg; } }
         .psm-input:focus { border-color: rgba(139,92,246,0.6) !important; background: rgba(139,92,246,0.07) !important; box-shadow: 0 0 0 3px rgba(139,92,246,0.08); }
         .psm-btn:hover { background: rgba(124,58,237,0.95) !important; transform: translateY(-1px); }
         .psm-btn:active { transform: scale(0.99) !important; }
+        .remember-label:hover { color: rgba(196,181,253,0.8) !important; }
       `}</style>
 
-      {/* Canvas background */}
       <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
 
-      {/* Floating tags */}
       {floatingTags.map((tag, i) => (
         <div key={i} style={{
           position: 'absolute', ...tag.style,
@@ -200,7 +216,6 @@ function Login() {
         }}>{tag.text}</div>
       ))}
 
-      {/* Card */}
       <div ref={cardRef} style={{ position: 'relative', zIndex: 10, perspective: '1000px' }}>
         <div ref={glassRef} style={{
           width: '320px',
@@ -211,7 +226,6 @@ function Login() {
           position: 'relative', overflow: 'hidden',
           transformStyle: 'preserve-3d'
         }}>
-          {/* Shine overlay */}
           <div ref={shineRef} style={{
             position: 'absolute', inset: 0,
             borderRadius: '22px', pointerEvents: 'none', zIndex: 1
@@ -244,7 +258,9 @@ function Login() {
           {/* Brand */}
           <div style={{ textAlign: 'center', marginBottom: '6px' }}>
             <div style={{ fontSize: '22px', fontWeight: 700, color: '#fff', letterSpacing: '1px' }}>PSM</div>
-            <div style={{ fontSize: '10px', color: 'rgba(196,181,253,0.4)', letterSpacing: '2px', textTransform: 'uppercase' }}>Predictive Stock Manager</div>
+            <div style={{ fontSize: '10px', color: 'rgba(196,181,253,0.4)', letterSpacing: '2px', textTransform: 'uppercase' }}>
+              Predictive Stock Manager
+            </div>
           </div>
 
           {/* Error */}
@@ -258,7 +274,10 @@ function Login() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} style={{ marginTop: '16px' }}>
-            <label style={{ fontSize: '11px', color: 'rgba(196,181,253,0.5)', display: 'block', marginBottom: '5px', letterSpacing: '0.5px' }}>Email</label>
+            <label style={{
+              fontSize: '11px', color: 'rgba(196,181,253,0.5)',
+              display: 'block', marginBottom: '5px', letterSpacing: '0.5px'
+            }}>Email</label>
             <input
               type="email" name="email" value={form.email}
               onChange={handleChange} required placeholder="exemple@email.com"
@@ -271,7 +290,11 @@ function Login() {
                 outline: 'none', transition: 'all 0.25s'
               }}
             />
-            <label style={{ fontSize: '11px', color: 'rgba(196,181,253,0.5)', display: 'block', marginBottom: '5px', letterSpacing: '0.5px' }}>Mot de passe</label>
+
+            <label style={{
+              fontSize: '11px', color: 'rgba(196,181,253,0.5)',
+              display: 'block', marginBottom: '5px', letterSpacing: '0.5px'
+            }}>Mot de passe</label>
             <input
               type="password" name="password" value={form.password}
               onChange={handleChange} required placeholder="••••••••"
@@ -280,10 +303,37 @@ function Login() {
                 width: '100%', background: 'rgba(255,255,255,0.04)',
                 border: '1px solid rgba(255,255,255,0.07)',
                 borderRadius: '12px', padding: '10px 14px',
-                color: '#fff', fontSize: '12px', marginBottom: '16px',
+                color: '#fff', fontSize: '12px', marginBottom: '12px',
                 outline: 'none', transition: 'all 0.25s'
               }}
             />
+
+            {/* ✅ Remember Me */}
+            <div style={{
+              display: 'flex', alignItems: 'center',
+              gap: '8px', marginBottom: '16px'
+            }}>
+              <input
+                type="checkbox"
+                id="remember"
+                checked={rememberMe}
+                onChange={e => setRememberMe(e.target.checked)}
+                style={{ cursor: 'pointer', accentColor: accentColor, width: '14px', height: '14px' }}
+              />
+              <label
+                htmlFor="remember"
+                className="remember-label"
+                style={{
+                  fontSize: '12px',
+                  color: 'rgba(196,181,253,0.5)',
+                  cursor: 'pointer',
+                  transition: 'color 0.2s'
+                }}
+              >
+                Se souvenir de moi (30 jours)
+              </label>
+            </div>
+
             <button
               type="submit" disabled={loading}
               onClick={handleRipple}
@@ -303,9 +353,14 @@ function Login() {
             </button>
           </form>
 
-          <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '11px', textAlign: 'center', marginTop: '14px' }}>
+          <p style={{
+            color: 'rgba(255,255,255,0.25)', fontSize: '11px',
+            textAlign: 'center', marginTop: '14px'
+          }}>
             Pas de compte ?{' '}
-            <Link to="/register" style={{ color: '#a78bfa', textDecoration: 'none' }}>S'inscrire</Link>
+            <Link to="/register" style={{ color: '#a78bfa', textDecoration: 'none' }}>
+              S'inscrire
+            </Link>
           </p>
         </div>
       </div>

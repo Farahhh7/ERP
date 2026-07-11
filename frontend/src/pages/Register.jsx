@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
+import { registerServiceWorker, subscribeToPush } from '../services/pushService';
 
 function Register() {
   const { accentColor } = useTheme();
@@ -135,6 +136,16 @@ function Register() {
       } else {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data));
+
+        // --- Notifications push ---
+        try {
+          await registerServiceWorker();
+          await subscribeToPush(data.token);
+        } catch (pushErr) {
+          console.warn('Push notifications non activées:', pushErr);
+          // on ne bloque pas l'inscription si le push échoue
+        }
+
         navigate('/');
       }
     } catch {

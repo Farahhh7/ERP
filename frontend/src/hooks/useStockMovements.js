@@ -7,30 +7,50 @@ export function useStockMovements() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const token = localStorage.getItem('token');
-  const headers = {
+  const getToken = () => localStorage.getItem('token') || sessionStorage.getItem('token');
+
+  const getHeaders = () => ({
     'Content-Type': 'application/json',
-    Authorization: `Bearer ${token}`
+    Authorization: `Bearer ${getToken()}`
+  });
+
+  // Wrapper fetch b timeout — bech ma yeb9ach "pending" l'infini
+  // ken WiFi mfassel b l7a9i9a (machi DevTools offline)
+  const fetchWithTimeout = async (url, options = {}, timeoutMs = 5000) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, { ...options, signal: controller.signal });
+      clearTimeout(timeoutId);
+      return res;
+    } catch (err) {
+      clearTimeout(timeoutId);
+      if (err.name === 'AbortError') {
+        throw new Error('Délai dépassé — vérifiez votre connexion');
+      }
+      throw err;
+    }
   };
 
   const fetchMovements = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(API, { headers });
+      const res = await fetchWithTimeout(API, { headers: getHeaders() });
       if (!res.ok) throw new Error('Erreur chargement mouvements');
       const data = await res.json();
       setMovements(Array.isArray(data) ? data : []);
     } catch (err) {
       setError(err.message);
+      setMovements([]); // évite d'afficher d'anciennes données incohérentes
     } finally {
       setLoading(false);
     }
   };
 
   const createMovement = async (form) => {
-    const res = await fetch(API, {
-      method: 'POST', headers,
+    const res = await fetchWithTimeout(API, {
+      method: 'POST', headers: getHeaders(),
       body: JSON.stringify(form)
     });
     const data = await res.json();
@@ -40,7 +60,9 @@ export function useStockMovements() {
   };
 
   const deleteMovement = async (id) => {
-    const res = await fetch(`${API}/${id}`, { method: 'DELETE', headers });
+    const res = await fetchWithTimeout(`${API}/${id}`, {
+      method: 'DELETE', headers: getHeaders()
+    });
     if (!res.ok) throw new Error('Erreur suppression');
     await fetchMovements();
   };

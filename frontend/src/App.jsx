@@ -3,8 +3,8 @@ import { ThemeProvider } from './context/ThemeContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import MainLayout from './layouts/MainLayout';
 import Dashboard from './pages/Dashboard';
-import Stock from './pages/Stocks';
-import Produit from './pages/Products';
+import Stocks from './pages/Stocks';
+import Products from './pages/Products';
 import Suppliers from './pages/Suppliers';
 import Forecasts from './pages/Forecasts';
 import Commandes from './pages/Commandes';
@@ -23,10 +23,10 @@ function App() {
             <ProtectedRoute><MainLayout><Dashboard /></MainLayout></ProtectedRoute>
           } />
           <Route path="/stock" element={
-            <ProtectedRoute><MainLayout><Stock /></MainLayout></ProtectedRoute>
+            <ProtectedRoute><MainLayout><Products /></MainLayout></ProtectedRoute>
           } />
           <Route path="/stocks" element={
-            <ProtectedRoute><MainLayout><Produit /></MainLayout></ProtectedRoute>
+            <ProtectedRoute><MainLayout><Stocks /></MainLayout></ProtectedRoute>
           } />
           <Route path="/fournisseurs" element={
             <ProtectedRoute><MainLayout><Suppliers /></MainLayout></ProtectedRoute>

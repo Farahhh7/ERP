@@ -14,11 +14,35 @@ const { protect } = require('./middleware/authMiddleware');
 connectDB();
 
 const app = express();
-app.use(cors());
+
+// CORS
+const corsOptions = {
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:4173',
+    'http://localhost:3000',
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 
+// Security headers
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  next();
+});
+
 app.get('/', (req, res) => {
-  res.send('API PSM en marche 🚀');
+  res.json({
+    message: 'API PSM en marche 🚀',
+    version: '1.0.0',
+    status: 'ok'
+  });
 });
 
 app.use('/api/products', productRoutes);
@@ -28,7 +52,7 @@ app.use('/api/suppliers', supplierRoutes);
 app.use('/api/forecasts', forecastRoutes);
 app.use('/api/orders', purchaseOrderRoutes);
 
-// ── AI Service routes ──────────────────────────────
+// AI Service routes
 app.get('/api/ai/forecast/:productId', protect, async (req, res) => {
   try {
     const response = await axios.get(
@@ -57,7 +81,20 @@ app.get('/api/ai/health', async (req, res) => {
     res.status(503).json({ status: 'unhealthy', message: 'AI service hors ligne' });
   }
 });
-// ──────────────────────────────────────────────────
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('Error:', err.message);
+  res.status(err.status || 500).json({
+    message: err.message || 'Erreur interne du serveur',
+    status: 'error'
+  });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ message: 'Route non trouvée' });
+});
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server fel port ${PORT}`));
+app.listen(PORT, () => console.log(`Server fel port ${PORT} 🚀`));
